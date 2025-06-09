@@ -1,141 +1,126 @@
 # 🎯 Task & Reward Tracker
 
-A full-stack web application for tracking tasks and managing reward points, built with Node.js, React, and Astra DB.
+A full-stack task management application with a flexible reward system supporting both points and time rewards.
 
 ## ✨ Features
 
-- **Task Management**: Add tasks with custom reward point values
-- **Progress Tracking**: Mark tasks as completed to earn points
-- **Reward System**: Spend earned points on custom rewards
-- **Dashboard**: View earnings, spending, and current balance
-- **Data Persistence**: All data stored securely in Astra DB
-- **Modern UI**: Beautiful, responsive design with glassmorphism effects
+- **Task Management**: Create, complete, and track tasks
+- **Flexible Rewards**: Award points, time (minutes), or both for completed tasks
+- **Reward Spending**: Use earned points and time for various activities
+- **Progress Tracking**: View comprehensive statistics and task history
+- **Responsive Design**: Modern glassmorphism UI that works on all devices
+- **Admin Tools**: Database cleanup endpoint for maintenance
 
 ## 🏗️ Architecture
 
 - **Backend**: Node.js with Express.js REST API
 - **Frontend**: React with Vite
-- **Database**: DataStax Astra DB (Document API)
+- **Database**: DataStax Astra DB (Cassandra-based cloud database)
 - **Styling**: Modern CSS with responsive design
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- Node.js (v16 or higher)
-- npm or yarn
+- Node.js 18+
 - DataStax Astra DB account
+- Git
 
-### 1. Clone the Repository
+### Local Development
 
-```bash
-git clone <repository-url>
-cd task-reward-tracker
-```
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/betloreilly/tasks.git
+   cd tasks
+   ```
 
-### 2. Set Up Astra DB
+2. **Install dependencies**
+   ```bash
+   # Install root dependencies
+   npm install
+   
+   # Install server dependencies  
+   cd server && npm install && cd ..
+   
+   # Install client dependencies
+   cd client && npm install && cd ..
+   ```
 
-1. Create a free account at [DataStax Astra](https://astra.datastax.com/)
-2. Create a new database
-3. Generate an Application Token
-4. Note your Database API Endpoint
+3. **Set up Astra DB**
+   - Create a database at [Astra DB](https://astra.datastax.com/)
+   - Generate an Application Token
+   - Get your API Endpoint URL
 
-### 3. Configure Environment Variables
+4. **Configure environment variables**
+   ```bash
+   cp server/.env.example server/.env
+   ```
+   
+   Edit `server/.env` with your actual values:
+   ```
+   ASTRA_DB_APPLICATION_TOKEN=your_token_here
+   ASTRA_DB_API_ENDPOINT=your_endpoint_here  
+   ASTRA_DB_KEYSPACE=default_keyspace
+   PORT=3001
+   ```
 
-Create a `.env` file in the `server` directory:
-
-```bash
-cd server
-cp env.example .env
-```
-
-Edit `.env` with your Astra DB credentials:
-
-```env
-ASTRA_DB_APPLICATION_TOKEN=your-astra-db-application-token-here
-ASTRA_DB_API_ENDPOINT=https://your-db-id-region.apps.astra.datastax.com
-PORT=5000
-```
-
-### 4. Install Dependencies
-
-```bash
-# Install root dependencies
-npm install
-
-# Install server dependencies
-cd server
-npm install
-
-# Install client dependencies
-cd ../client
-npm install
-```
-
-### 5. Run the Application
-
-From the root directory:
-
-```bash
-# Run both frontend and backend concurrently
-npm run dev
-```
-
-Or run them separately:
-
-```bash
-# Terminal 1 - Backend
-npm run server
-
-# Terminal 2 - Frontend
-npm run client
-```
-
-The application will be available at:
-- Frontend: http://localhost:5173
-- Backend API: http://localhost:5000
+5. **Start development servers**
+   ```bash
+   npm run dev
+   ```
+   
+   This starts both the React frontend (http://localhost:5173) and Express backend (http://localhost:3001)
 
 ## 📚 API Documentation
 
 ### Base URL
 ```
-http://localhost:5000/api
+http://localhost:3001/api
 ```
 
 ### Endpoints
 
 #### Tasks
 
-**GET `/tasks`**
+**GET `/api/tasks`**
 - Get all tasks for a user
 - Query params: `userId` (optional, defaults to 'default-user')
 - Response: Array of task objects
 
-**POST `/tasks`**
+**POST `/api/tasks`**
 - Create a new task
 - Body: `{ description: string, reward: number, userId?: string }`
 - Response: Created task object
 
-**POST `/tasks/:id/complete`**
+**PUT `/api/tasks/:id/complete`**
 - Mark a task as completed
 - Body: `{ userId?: string }`
 - Response: Updated task object
 
 #### Rewards
 
-**GET `/rewards/summary`**
+**GET `/api/rewards/summary`**
 - Get reward summary for a user
 - Query params: `userId` (optional)
 - Response: `{ totalEarned, totalUsed, balance, user }`
 
-**POST `/rewards/use`**
+**POST `/api/rewards/use-points`**
 - Spend reward points
 - Body: `{ amount: number, description?: string, userId?: string }`
 - Response: Spend confirmation with new balance
 
-#### Health Check
+**POST `/api/rewards/use-time`**
+- Spend time
+- Body: `{ time: number, description?: string, userId?: string }`
+- Response: Spend confirmation with new balance
 
-**GET `/health`**
+#### Admin
+
+**DELETE `/api/admin/cleanup`**
+- Clean all data (use before publishing)
+- Response: Clean confirmation
+
+**GET `/api/health`**
 - Check server status
 - Response: `{ status: string, timestamp: string }`
 
@@ -146,23 +131,26 @@ http://localhost:5000/api
 **users**
 ```json
 {
-  "_id": "user123",
-  "name": "Alice",
-  "totalEarned": 150,
-  "totalUsed": 40
+  "_id": "default-user",
+  "totalEarned": 0,
+  "totalUsed": 0,
+  "tasksCompleted": 0,
+  "timeEarned": 0,
+  "timeUsed": 0
 }
 ```
 
 **tasks**
 ```json
 {
-  "_id": "task456",
-  "userId": "user123",
-  "description": "Do math homework",
-  "reward": 10,
+  "_id": "uuid",
+  "userId": "default-user",
+  "description": "Task description",
+  "reward": 5,
+  "timeReward": 10,
   "completed": false,
-  "createdAt": "2023-12-01T12:00:00.000Z",
-  "completedAt": "2023-12-01T13:00:00.000Z"
+  "createdAt": "ISO date",
+  "completedAt": "ISO date"
 }
 ```
 
@@ -170,24 +158,22 @@ http://localhost:5000/api
 
 ### Vercel Deployment
 
-1. **Prepare for deployment:**
-   ```bash
-   npm run build
+1. **Connect Repository**
+   - Connect your GitHub repository to Vercel
+   - Choose the root directory (`tasks`) when prompted
+
+2. **Set Environment Variables**
+   In Vercel Dashboard → Project → Settings → Environment Variables, add:
+   ```
+   ASTRA_DB_APPLICATION_TOKEN = [your actual token]
+   ASTRA_DB_API_ENDPOINT = [your actual endpoint]
+   ASTRA_DB_KEYSPACE = default_keyspace  
+   PORT = 3001
    ```
 
-2. **Install Vercel CLI:**
-   ```bash
-   npm install -g vercel
-   ```
-
-3. **Deploy:**
-   ```bash
-   vercel
-   ```
-
-4. **Set environment variables in Vercel dashboard:**
-   - `ASTRA_DB_APPLICATION_TOKEN`
-   - `ASTRA_DB_API_ENDPOINT`
+3. **Deploy**
+   - Push changes to trigger automatic deployment
+   - Or manually redeploy from Vercel dashboard
 
 ### Alternative Deployment Options
 
@@ -200,20 +186,20 @@ http://localhost:5000/api
 ### Project Structure
 
 ```
-task-reward-tracker/
+tasks/
 ├── client/                 # React frontend
 │   ├── src/
 │   │   ├── App.jsx        # Main application component
-│   │   ├── App.css        # Styling
-│   │   └── main.jsx       # React entry point
-│   ├── index.html         # HTML template
-│   ├── vite.config.js     # Vite configuration
+│   │   ├── App.css        # Styling with glassmorphism
+│   │   └── main.jsx       # Entry point
+│   ├── package.json
+│   └── vite.config.js     # Vite configuration
+├── server/                # Express backend  
+│   ├── index.js          # Main server file
+│   ├── .env.example      # Environment template
 │   └── package.json
-├── server/                # Node.js backend
-│   ├── index.js          # Express server
-│   ├── env.example       # Environment variables template
-│   └── package.json
-├── package.json          # Root package configuration
+├── vercel.json           # Vercel deployment config
+├── package.json          # Root package.json
 └── README.md
 ```
 
@@ -240,25 +226,29 @@ npm start           # Start production server
 
 ### Common Issues
 
-**Connection Error to Astra DB**
-- Verify your Application Token is correct
-- Check that your API Endpoint URL is properly formatted
-- Ensure your database is active in the Astra dashboard
+**"UNAUTHENTICATED: Invalid token"**
+- Check environment variables are set correctly
+- Verify Astra DB token is valid and has proper permissions
 
-**Frontend Can't Connect to Backend**
-- Verify the backend server is running on port 5000
-- Check the proxy configuration in `vite.config.js`
+**"Port already in use"**  
+- Kill processes using port 3001: `lsof -ti:3001 | xargs kill`
+- Or change PORT in environment variables
 
-**CORS Issues**
-- The server includes CORS middleware for all origins
-- For production, consider restricting CORS to specific domains
+**404 Deployment Not Found (Vercel)**
+- Ensure environment variables are set in Vercel dashboard
+- Check build logs for errors
+- Verify vercel.json configuration
+
+**Database collections missing**
+- Collections are auto-created on first use
+- Check Astra DB dashboard for collection status
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create a feature branch: `git checkout -b feature-name`
-3. Commit changes: `git commit -am 'Add feature'`
-4. Push to branch: `git push origin feature-name`
+2. Create a feature branch
+3. Make your changes  
+4. Test locally
 5. Submit a pull request
 
 ## 📄 License
