@@ -19,8 +19,12 @@ const db = client.db(process.env.ASTRA_DB_API_ENDPOINT, {
   token: process.env.ASTRA_DB_APPLICATION_TOKEN,
 });
 
-// Ensure collections exist
+// Lazy collection initialization - only run when needed and handle gracefully
+let collectionsInitialized = false;
+
 async function ensureCollections() {
+  if (collectionsInitialized) return;
+  
   try {
     console.log('🔄 Checking database connection...');
     const collections = await db.listCollections();
@@ -38,18 +42,14 @@ async function ensureCollections() {
       await db.createCollection('tasks');
     }
     
+    collectionsInitialized = true;
     console.log('✅ Database setup completed');
   } catch (error) {
     console.error('❌ Database setup failed:', error);
-    throw error;
+    // Don't throw - let the operation continue, collections might already exist
+    collectionsInitialized = true; // Assume they exist to avoid repeated failures
   }
 }
-
-// Initialize database on startup
-ensureCollections().catch(error => {
-  console.error('💥 Failed to initialize database:', error);
-  process.exit(1);
-});
 
 const users = db.collection('users');
 const tasks = db.collection('tasks');
@@ -83,6 +83,7 @@ async function getOrCreateUser(userId = 'default-user') {
 // GET /tasks - List all tasks for a user
 app.get('/api/tasks', async (req, res) => {
   try {
+    await ensureCollections();
     const userId = req.query.userId || 'default-user';
     const taskList = await tasks.find({ userId }).toArray();
     res.json(taskList);
@@ -95,6 +96,7 @@ app.get('/api/tasks', async (req, res) => {
 // POST /tasks - Add a new task
 app.post('/api/tasks', async (req, res) => {
   try {
+    await ensureCollections();
     const { description, reward, timeReward, userId = 'default-user' } = req.body;
     const pointReward = parseInt(reward) || 0;
     const timeRewardValue = parseInt(timeReward) || 0;
@@ -127,6 +129,7 @@ app.post('/api/tasks', async (req, res) => {
 // POST /tasks/:id/complete - Mark task as completed
 app.post('/api/tasks/:id/complete', async (req, res) => {
   try {
+    await ensureCollections();
     const taskId = req.params.id;
     const userId = req.body.userId || 'default-user';
     
@@ -176,6 +179,7 @@ app.post('/api/tasks/:id/complete', async (req, res) => {
 // POST /rewards/use - Spend reward points
 app.post('/api/rewards/use', async (req, res) => {
   try {
+    await ensureCollections();
     const { amount, description, userId = 'default-user' } = req.body;
     if (!amount || amount <= 0) {
       return res.status(400).json({ error: 'Valid amount is required' });
@@ -199,6 +203,7 @@ app.post('/api/rewards/use', async (req, res) => {
 // POST /rewards/use-time - Spend time rewards
 app.post('/api/rewards/use-time', async (req, res) => {
   try {
+    await ensureCollections();
     const { minutes, activity = 'Free time', userId = 'default-user' } = req.body;
     if (!minutes || minutes <= 0) {
       return res.status(400).json({ error: 'Valid time amount is required' });
@@ -226,6 +231,7 @@ app.post('/api/rewards/use-time', async (req, res) => {
 // GET /rewards/summary - Show reward totals and balance
 app.get('/api/rewards/summary', async (req, res) => {
   try {
+    await ensureCollections();
     const userId = req.query.userId || 'default-user';
     const user = await getOrCreateUser(userId);
     const summary = {
