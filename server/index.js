@@ -21,12 +21,35 @@ const db = client.db(process.env.ASTRA_DB_API_ENDPOINT, {
 
 // Ensure collections exist
 async function ensureCollections() {
-  const collections = await db.listCollections();
-  const names = collections.map(c => c.name);
-  if (!names.includes('users')) await db.createCollection('users');
-  if (!names.includes('tasks')) await db.createCollection('tasks');
+  try {
+    console.log('🔄 Checking database connection...');
+    const collections = await db.listCollections();
+    console.log('📋 Existing collections:', collections.map(c => c.name));
+    
+    const names = collections.map(c => c.name);
+    
+    if (!names.includes('users')) {
+      console.log('👥 Creating users collection...');
+      await db.createCollection('users');
+    }
+    
+    if (!names.includes('tasks')) {
+      console.log('📝 Creating tasks collection...');
+      await db.createCollection('tasks');
+    }
+    
+    console.log('✅ Database setup completed');
+  } catch (error) {
+    console.error('❌ Database setup failed:', error);
+    throw error;
+  }
 }
-await ensureCollections();
+
+// Initialize database on startup
+ensureCollections().catch(error => {
+  console.error('💥 Failed to initialize database:', error);
+  process.exit(1);
+});
 
 const users = db.collection('users');
 const tasks = db.collection('tasks');
@@ -253,8 +276,40 @@ app.delete('/api/admin/cleanup', async (req, res) => {
 });
 
 // Health check endpoint
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'Server is running', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  try {
+    // Test database connection
+    const collections = await db.listCollections();
+    res.json({ 
+      status: 'OK', 
+      timestamp: new Date().toISOString(),
+      service: 'task-reward-tracker',
+      database: {
+        connected: true,
+        collections: collections.map(c => c.name)
+      },
+      environment: {
+        hasToken: !!process.env.ASTRA_DB_APPLICATION_TOKEN,
+        hasEndpoint: !!process.env.ASTRA_DB_API_ENDPOINT,
+        keyspace: process.env.ASTRA_DB_KEYSPACE
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ 
+      status: 'ERROR', 
+      timestamp: new Date().toISOString(),
+      service: 'task-reward-tracker',
+      database: {
+        connected: false,
+        error: error.message
+      },
+      environment: {
+        hasToken: !!process.env.ASTRA_DB_APPLICATION_TOKEN,
+        hasEndpoint: !!process.env.ASTRA_DB_API_ENDPOINT,
+        keyspace: process.env.ASTRA_DB_KEYSPACE
+      }
+    });
+  }
 });
 
 // Error handling middleware
