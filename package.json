@@ -1,0 +1,19 @@
+{
+  "name": "task-reward-tracker",
+  "version": "1.0.0",
+  "description": "Full-stack Task & Reward Tracker with Astra DB",
+  "main": "server/index.js",
+  "scripts": {
+    "dev": "concurrently \"npm run server\" \"npm run client\"",
+    "server": "cd server && npm run dev",
+    "client": "cd client && npm run dev",
+    "build": "cd client && npm run build",
+    "start": "cd server && npm start"
+  },
+  "keywords": ["tasks", "rewards", "astra-db", "nodejs", "react"],
+  "author": "",
+  "license": "MIT",
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+} 
