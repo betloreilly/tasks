@@ -13,19 +13,22 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Astra DB setup (per docs)
-const client = new DataAPIClient();
-const db = client.db(process.env.ASTRA_DB_API_ENDPOINT, {
-  token: process.env.ASTRA_DB_APPLICATION_TOKEN,
-});
-
-// Lazy collection initialization - only run when needed and handle gracefully
-let collectionsInitialized = false;
+// Astra DB setup - Lazily initialized to work in serverless environments
+let db;
+let users;
+let tasks;
 
 async function ensureCollections() {
-  if (collectionsInitialized) return;
+  if (db) return;
   
   try {
+    console.log('🔄 Initializing Astra DB Client...');
+    const client = new DataAPIClient(process.env.ASTRA_DB_APPLICATION_TOKEN);
+    db = client.db(process.env.ASTRA_DB_API_ENDPOINT);
+
+    users = db.collection('users');
+    tasks = db.collection('tasks');
+    
     console.log('🔄 Checking database connection...');
     const collections = await db.listCollections();
     console.log('📋 Existing collections:', collections.map(c => c.name));
@@ -42,17 +45,14 @@ async function ensureCollections() {
       await db.createCollection('tasks');
     }
     
-    collectionsInitialized = true;
     console.log('✅ Database setup completed');
   } catch (error) {
     console.error('❌ Database setup failed:', error);
-    // Don't throw - let the operation continue, collections might already exist
-    collectionsInitialized = true; // Assume they exist to avoid repeated failures
+    // In a serverless environment, we must throw to indicate a hard failure.
+    // The process will be terminated and restarted on the next request.
+    throw new Error('Failed to connect to or initialize the database.');
   }
 }
-
-const users = db.collection('users');
-const tasks = db.collection('tasks');
 
 // Helper: get or create user
 async function getOrCreateUser(userId = 'default-user') {
