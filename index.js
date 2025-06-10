@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { DataAPIClient } from '@datastax/astra-db-ts';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -12,6 +14,13 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the React app
+app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // Astra DB setup - Lazily initialized to work in serverless environments
 let db;
@@ -284,7 +293,7 @@ app.delete('/api/admin/cleanup', async (req, res) => {
 // Health check endpoint
 app.get('/api/health', async (req, res) => {
   try {
-    // Test database connection
+    await ensureCollections(); // Ensure DB is ready
     const collections = await db.listCollections();
     res.json({ 
       status: 'OK', 
@@ -296,8 +305,7 @@ app.get('/api/health', async (req, res) => {
       },
       environment: {
         hasToken: !!process.env.ASTRA_DB_APPLICATION_TOKEN,
-        hasEndpoint: !!process.env.ASTRA_DB_API_ENDPOINT,
-        keyspace: process.env.ASTRA_DB_KEYSPACE
+        hasEndpoint: !!process.env.ASTRA_DB_API_ENDPOINT
       }
     });
   } catch (error) {
@@ -311,11 +319,16 @@ app.get('/api/health', async (req, res) => {
       },
       environment: {
         hasToken: !!process.env.ASTRA_DB_APPLICATION_TOKEN,
-        hasEndpoint: !!process.env.ASTRA_DB_API_ENDPOINT,
-        keyspace: process.env.ASTRA_DB_KEYSPACE
+        hasEndpoint: !!process.env.ASTRA_DB_API_ENDPOINT
       }
     });
   }
+});
+
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.get('*', (req, res) => {
+  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
 });
 
 // Error handling middleware
@@ -324,6 +337,10 @@ app.use((error, req, res, next) => {
   res.status(500).json({ error: 'Internal server error' });
 });
 
+// Start server
+// In a serverless environment, we don't call app.listen.
+// The Vercel runtime handles invoking the exported app.
+// We keep the listen call for local development.
 app.listen(PORT, () => {
   console.log(`🚀 Task & Reward Tracker server running on port ${PORT}`);
   console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
