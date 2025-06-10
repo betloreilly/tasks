@@ -10,7 +10,8 @@
     "start": "node index.js",
     "server": "nodemon index.js",
     "client": "cd client && npm run dev",
-    "build": "cd client && npm run build"
+    "build": "cd client && npm run build",
+    "vercel-build": "cd client && npm run build"
   },
   "keywords": ["tasks", "rewards", "astra-db", "nodejs", "react"],
   "author": "",
