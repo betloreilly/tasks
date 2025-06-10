@@ -23,8 +23,10 @@ async function ensureCollections() {
   
   try {
     console.log('🔄 Initializing Astra DB Client...');
-    const client = new DataAPIClient(process.env.ASTRA_DB_APPLICATION_TOKEN);
-    db = client.db(process.env.ASTRA_DB_API_ENDPOINT);
+    const client = new DataAPIClient();
+    db = client.db(process.env.ASTRA_DB_API_ENDPOINT, { 
+      token: process.env.ASTRA_DB_APPLICATION_TOKEN 
+    });
 
     users = db.collection('users');
     tasks = db.collection('tasks');

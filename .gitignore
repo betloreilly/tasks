@@ -1,2 +1,8 @@
 node_modules
 server/.env
+
+# misc
+.DS_Store
+.env
+.env.local
+.env.development.local
