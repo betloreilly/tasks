@@ -2,7 +2,8 @@
   "name": "task-reward-tracker",
   "version": "1.0.0",
   "description": "Full-stack Task & Reward Tracker with Astra DB",
-  "main": "server/index.js",
+  "main": "index.js",
+  "type": "module",
   "private": true,
   "scripts": {
     "dev": "concurrently \"npm:server\" \"npm:client\"",

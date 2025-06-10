@@ -3,6 +3,8 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { DataAPIClient } from '@datastax/astra-db-ts';
+import path from 'path';
+import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -12,6 +14,15 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
+
+// Get the directory name of the current module
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+// Serve static files from the React app (for local development)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(express.static(path.join(__dirname, 'client/dist')));
+}
 
 // Astra DB setup - Lazily initialized to work in serverless environments
 let db;
@@ -318,11 +329,23 @@ app.get('/api/health', async (req, res) => {
   }
 });
 
+// The "catchall" handler for local development
+if (process.env.NODE_ENV !== 'production') {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'client/dist/index.html'));
+  });
+}
+
 // Start server
 // In a serverless environment, we don't call app.listen.
 // The Vercel runtime handles invoking the exported app.
 // We keep the listen call for local development.
-app.listen(PORT, () => {
-  console.log(`🚀 Task & Reward Tracker server running on port ${PORT}`);
-  console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
-}); 
+if (process.env.NODE_ENV !== 'production') {
+  app.listen(PORT, () => {
+    console.log(`🚀 Task & Reward Tracker server running on port ${PORT}`);
+    console.log(`📊 API endpoints available at http://localhost:${PORT}/api`);
+  });
+}
+
+// Export the app for Vercel
+export default app; 
