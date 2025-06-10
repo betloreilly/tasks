@@ -3,8 +3,6 @@ import cors from 'cors';
 import dotenv from 'dotenv';
 import { v4 as uuidv4 } from 'uuid';
 import { DataAPIClient } from '@datastax/astra-db-ts';
-import path from 'path';
-import { fileURLToPath } from 'url';
 
 dotenv.config();
 
@@ -14,13 +12,6 @@ const PORT = process.env.PORT || 3001;
 // Middleware
 app.use(cors());
 app.use(express.json());
-
-// Get the directory name of the current module
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-// Serve static files from the React app
-app.use(express.static(path.join(__dirname, 'client/dist')));
 
 // Astra DB setup - Lazily initialized to work in serverless environments
 let db;
@@ -323,18 +314,6 @@ app.get('/api/health', async (req, res) => {
       }
     });
   }
-});
-
-// The "catchall" handler: for any request that doesn't
-// match one above, send back React's index.html file.
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, 'client/dist/index.html'));
-});
-
-// Error handling middleware
-app.use((error, req, res, next) => {
-  console.error('Unhandled error:', error);
-  res.status(500).json({ error: 'Internal server error' });
 });
 
 // Start server
