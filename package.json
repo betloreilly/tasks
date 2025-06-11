@@ -2,7 +2,7 @@
   "name": "task-reward-tracker",
   "version": "1.0.0",
   "description": "Full-stack Task & Reward Tracker with Astra DB",
-  "main": "index.js",
+  "main": "api/index.js",
   "type": "module",
   "private": true,
   "scripts": {
@@ -10,8 +10,7 @@
     "start": "node index.js",
     "server": "nodemon index.js",
     "client": "cd client && npm run dev",
-    "build": "cd client && npm run build",
-    "vercel-build": "cd client && npm install && npm run build"
+    "build": "cd client && npm run build"
   },
   "keywords": ["tasks", "rewards", "astra-db", "nodejs", "react"],
   "author": "",

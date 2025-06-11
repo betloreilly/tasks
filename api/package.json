@@ -1,0 +1,13 @@
+{
+  "name": "task-reward-tracker-api",
+  "version": "1.0.0",
+  "description": "API for Task & Reward Tracker",
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@datastax/astra-db-ts": "^1.4.1",
+    "express": "^4.19.2",
+    "cors": "^2.8.5",
+    "uuid": "^10.0.0"
+  }
+} 
