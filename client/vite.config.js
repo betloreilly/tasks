@@ -6,7 +6,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/',
   build: {
-    outDir: resolve(__dirname, '../dist'),
+    outDir: resolve(__dirname, '../public'),
     emptyOutDir: true,
     assetsDir: 'assets',
     sourcemap: false,
